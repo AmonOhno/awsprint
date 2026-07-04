@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  doc-page:not(:defined){visibility:hidden}
+  body{margin:0}
+</style>
+</helmet>
+
+<x-import component-from-global-scope="doc-page" from="./doc-page.js" size="a4" margin="18mm" hint-size="100%,100%">
+<div style="font-family:'Noto Sans JP',sans-serif;color:#212a35;font-size:14.5px;line-height:1.85;font-weight:400;-webkit-font-smoothing:antialiased">
+
+  <div style="display:flex;align-items:center;gap:10px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.18em;color:#c26a12;font-weight:600;text-transform:uppercase;margin-bottom:14px">
+    <span style="width:26px;height:2px;background:#e8830c;display:inline-block"></span>
+    DETAILED REQUIREMENTS SPECIFICATION
+  </div>
+
+  <h1 style="font-size:30px;font-weight:900;color:#14212e;line-height:1.35;margin:0 0 6px;letter-spacing:-0.01em">AWS SAA 学習アプリ<br>詳細要件定義書</h1>
+  <p style="font-size:15px;color:#5b6672;margin:0 0 22px;font-weight:500">アーキテクチャ図解連動による「ソリューションアーキテクトの思考力」育成アプリ</p>
+
+  <table style="width:100%;border-collapse:collapse;font-size:12.5px;margin:0 0 30px;border:1px solid #d9dee4">
+    <tbody>
+      <tr>
+        <th style="text-align:left;background:#f4f6f8;color:#14212e;font-weight:700;padding:8px 12px;border:1px solid #d9dee4;width:22%">文書ID</th>
+        <td style="padding:8px 12px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace">DOC-REQ-001</td>
+        <th style="text-align:left;background:#f4f6f8;color:#14212e;font-weight:700;padding:8px 12px;border:1px solid #d9dee4;width:22%">バージョン</th>
+        <td style="padding:8px 12px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace">1.0</td>
+      </tr>
+      <tr>
+        <th style="text-align:left;background:#f4f6f8;color:#14212e;font-weight:700;padding:8px 12px;border:1px solid #d9dee4">作成日</th>
+        <td style="padding:8px 12px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace">2026-07-04</td>
+        <th style="text-align:left;background:#f4f6f8;color:#14212e;font-weight:700;padding:8px 12px;border:1px solid #d9dee4">ステータス</th>
+        <td style="padding:8px 12px;border:1px solid #d9dee4"><span style="background:#fff2e0;color:#c26a12;font-weight:700;font-size:11px;padding:2px 8px;border-radius:3px">DRAFT / レビュー用</span></td>
+      </tr>
+      <tr>
+        <th style="text-align:left;background:#f4f6f8;color:#14212e;font-weight:700;padding:8px 12px;border:1px solid #d9dee4">対象読者</th>
+        <td colspan="3" style="padding:8px 12px;border:1px solid #d9dee4">開発者本人（初期）／将来のコントリビューター</td>
+      </tr>
+      <tr>
+        <th style="text-align:left;background:#f4f6f8;color:#14212e;font-weight:700;padding:8px 12px;border:1px solid #d9dee4">関連文書</th>
+        <td colspan="3" style="padding:8px 12px;border:1px solid #d9dee4">DOC-SPEC-001「技術仕様書」／ <span style="font-family:'JetBrains Mono',monospace;font-size:12px">data/questions.sample.json</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ============ 1 ============ -->
+  <h2 style="font-size:20px;font-weight:900;color:#14212e;margin:34px 0 4px;padding-bottom:8px;border-bottom:2px solid #14212e">1. はじめに</h2>
+
+  <h3 style="font-size:15.5px;font-weight:700;color:#c26a12;margin:22px 0 6px">1.1 目的</h3>
+  <p style="margin:0 0 12px">本書は、AWS Certified Solutions Architect – Associate（以下 SAA）合格を目的とした個人学習アプリの<strong>詳細な機能・非機能要件</strong>を定義する。元の要件定義書（背景メモ）を、開発に着手できる粒度まで具体化し、各要件に一意なIDと受け入れ基準を付与する。実装方式は姉妹文書「技術仕様書（DOC-SPEC-001）」で定義する。</p>
+
+  <h3 style="font-size:15.5px;font-weight:700;color:#c26a12;margin:22px 0 6px">1.2 本アプリのコアバリュー（差別化要因）</h3>
+  <div style="background:#fff8f0;border:1px solid #f2d9b8;border-left:4px solid #e8830c;border-radius:4px;padding:14px 18px;margin:0 0 14px">
+    <p style="margin:0;font-weight:500">既存の問題集アプリとの決定的な違いは、<strong>「問題文 → インフラ構成図」への変換を視覚的に反復訓練できる</strong>点にある。単なる正誤判定ではなく、正解構成のアーキテクチャ図を提示し、<strong>解説文と図の該当箇所をインタラクティブに連動（ハイライト）</strong>させることで、文章要件を即座に構成図へ翻訳する「ソリューションアーキテクトの思考回路」を養成する。この図解連動機能を本アプリの最優先コア機能（Must）と位置づける。</p>
+  </div>
+
+  <h3 style="font-size:15.5px;font-weight:700;color:#c26a12;margin:22px 0 6px">1.3 用語定義</h3>
+  <table style="width:100%;border-collapse:collapse;font-size:13px;margin:0 0 8px">
+    <thead>
+      <tr>
+        <th style="text-align:left;background:#14212e;color:#fff;font-weight:700;padding:9px 12px;width:24%">用語</th>
+        <th style="text-align:left;background:#14212e;color:#fff;font-weight:700;padding:9px 12px">定義</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td style="padding:8px 12px;border:1px solid #d9dee4;font-weight:600">SAA</td><td style="padding:8px 12px;border:1px solid #d9dee4">AWS Certified Solutions Architect – Associate 試験</td></tr>
+      <tr><td style="padding:8px 12px;border:1px solid #d9dee4;font-weight:600">試験分野</td><td style="padding:8px 12px;border:1px solid #d9dee4">SAAの4分野（安全なアーキテクチャ／高レジリエンス／高性能／コスト最適化）</td></tr>
+      <tr><td style="padding:8px 12px;border:1px solid #d9dee4;font-weight:600">DiagramSpec</td><td style="padding:8px 12px;border:1px solid #d9dee4">構成図をノード・エッジで表現する構造化JSONデータ（本アプリ独自形式）</td></tr>
+      <tr><td style="padding:8px 12px;border:1px solid #d9dee4;font-weight:600">図解連動ハイライト</td><td style="padding:8px 12px;border:1px solid #d9dee4">解説テキストの語句と構成図のノードを対応づけ、相互に強調表示する機能</td></tr>
+      <tr><td style="padding:8px 12px;border:1px solid #d9dee4;font-weight:600">MVP</td><td style="padding:8px 12px;border:1px solid #d9dee4">合格に必要な最小限の機能セット（Phase 1〜3で完成）</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ============ 2 ============ -->
+  <h2 style="font-size:20px;font-weight:900;color:#14212e;margin:34px 0 4px;padding-bottom:8px;border-bottom:2px solid #14212e">2. プロダクトスコープ</h2>
+
+  <h3 style="font-size:15.5px;font-weight:700;color:#c26a12;margin:22px 0 6px">2.1 スコープ範囲</h3>
+  <table style="width:100%;border-collapse:collapse;font-size:13px;margin:0 0 14px">
+    <thead>
+      <tr>
+        <th style="text-align:left;background:#14212e;color:#fff;font-weight:700;padding:9px 12px;width:50%">✓ MVPに含む（Phase 1–3）</th>
+        <th style="text-align:left;background:#5b6672;color:#fff;font-weight:700;padding:9px 12px;width:50%">✗ 対象外（将来 / Phase 4+）</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="padding:8px 12px;border:1px solid #d9dee4;vertical-align:top">分野別ミニテスト・ランダム1問1答</td>
+        <td style="padding:8px 12px;border:1px solid #d9dee4;vertical-align:top">ユーザー登録・マルチユーザー対応</td>
+      </tr>
+      <tr>
+        <td style="padding:8px 12px;border:1px solid #d9dee4;vertical-align:top">本番同様の模擬試験（65問 / 130分）</td>
+        <td style="padding:8px 12px;border:1px solid #d9dee4;vertical-align:top">ランキング・進捗共有・SNS連携</td>
+      </tr>
+      <tr>
+        <td style="padding:8px 12px;border:1px solid #d9dee4;vertical-align:top"><strong>アーキテクチャ図表示＋解説連動ハイライト</strong></td>
+        <td style="padding:8px 12px;border:1px solid #d9dee4;vertical-align:top">LLMによる図の自動生成（アプローチC）</td>
+      </tr>
+      <tr>
+        <td style="padding:8px 12px;border:1px solid #d9dee4;vertical-align:top">分野別正解率グラフ・弱点分析</td>
+        <td style="padding:8px 12px;border:1px solid #d9dee4;vertical-align:top">課金・サブスクリプション</td>
+      </tr>
+      <tr>
+        <td style="padding:8px 12px;border:1px solid #d9dee4;vertical-align:top">ブックマーク（要復習リスト）</td>
+        <td style="padding:8px 12px;border:1px solid #d9dee4;vertical-align:top">ネイティブモバイルアプリ（当面Webのみ）</td>
+      </tr>
+      <tr>
+        <td style="padding:8px 12px;border:1px solid #d9dee4;vertical-align:top">問題・図解のCRUD（管理 / JSONインポート）</td>
+        <td style="padding:8px 12px;border:1px solid #d9dee4;vertical-align:top">SAP / 他資格への対応</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3 style="font-size:15.5px;font-weight:700;color:#c26a12;margin:22px 0 6px">2.2 リリースフェーズ</h3>
+  <table style="width:100%;border-collapse:collapse;font-size:13px;margin:0 0 8px">
+    <thead>
+      <tr>
+        <th style="text-align:left;background:#14212e;color:#fff;font-weight:700;padding:9px 12px;width:16%">フェーズ</th>
+        <th style="text-align:left;background:#14212e;color:#fff;font-weight:700;padding:9px 12px">ゴール</th>
+        <th style="text-align:left;background:#14212e;color:#fff;font-weight:700;padding:9px 12px;width:26%">主要成果物</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td style="padding:8px 12px;border:1px solid #d9dee4;font-weight:700;color:#c26a12">Phase 1</td><td style="padding:8px 12px;border:1px solid #d9dee4">データ設計。問題＋DiagramSpec構造の確定、図解付きサンプル5〜10問</td><td style="padding:8px 12px;border:1px solid #d9dee4">データスキーマ / サンプルJSON</td></tr>
+      <tr><td style="padding:8px 12px;border:1px solid #d9dee4;font-weight:700;color:#c26a12">Phase 2</td><td style="padding:8px 12px;border:1px solid #d9dee4">MVPコア。1問1答＋結果解説画面での図表示・連動ハイライト</td><td style="padding:8px 12px;border:1px solid #d9dee4">演習・解説画面</td></tr>
+      <tr><td style="padding:8px 12px;border:1px solid #d9dee4;font-weight:700;color:#c26a12">Phase 3</td><td style="padding:8px 12px;border:1px solid #d9dee4">模擬試験（65問/130分）とダッシュボード（苦手分析）</td><td style="padding:8px 12px;border:1px solid #d9dee4">試験モード / 進捗可視化</td></tr>
+      <tr><td style="padding:8px 12px;border:1px solid #d9dee4;font-weight:700;color:#5b6672">Phase 4</td><td style="padding:8px 12px;border:1px solid #d9dee4">データ拡充（100問以上）、試験直前チェック、将来機能の検討</td><td style="padding:8px 12px;border:1px solid #d9dee4">問題プール拡充</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ============ 3 ============ -->
+  <h2 style="font-size:20px;font-weight:900;color:#14212e;margin:34px 0 4px;padding-bottom:8px;border-bottom:2px solid #14212e">3. ペルソナとユーザーストーリー</h2>
+
+  <h3 style="font-size:15.5px;font-weight:700;color:#c26a12;margin:22px 0 6px">3.1 ペルソナ（初期フェーズ）</h3>
+  <p style="margin:0 0 12px">エンジニア／これからAWSを学ぶ学習者。座学だけでは「文章で書かれた要件」を構成図に結びつけられず、実務・試験の両方で応用が効かないことに課題を感じている。スキマ時間にPC／タブレットのブラウザで演習し、間違えた問題は図で理解して復習したい。</p>
+
+  <h3 style="font-size:15.5px;font-weight:700;color:#c26a12;margin:22px 0 6px">3.2 主要ユーザーストーリー</h3>
+  <table style="width:100%;border-collapse:collapse;font-size:13px;margin:0 0 8px">
+    <thead>
+      <tr>
+        <th style="text-align:left;background:#14212e;color:#fff;font-weight:700;padding:9px 12px;width:12%">ID</th>
+        <th style="text-align:left;background:#14212e;color:#fff;font-weight:700;padding:9px 12px">ストーリー</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td style="padding:8px 12px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-weight:600">US-01</td><td style="padding:8px 12px;border:1px solid #d9dee4">学習者として、苦手分野だけを選んでミニテストを解きたい。集中的に弱点を潰すため。</td></tr>
+      <tr><td style="padding:8px 12px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-weight:600">US-02</td><td style="padding:8px 12px;border:1px solid #d9dee4">学習者として、回答後に正解構成の<strong>アーキテクチャ図</strong>を見たい。文章の要件が実際どう組まれるか理解するため。</td></tr>
+      <tr><td style="padding:8px 12px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-weight:600">US-03</td><td style="padding:8px 12px;border:1px solid #d9dee4">学習者として、なぜ他の選択肢が誤りかを<strong>図の該当箇所と紐づけて</strong>知りたい。誤答パターンを構造的に覚えるため。</td></tr>
+      <tr><td style="padding:8px 12px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-weight:600">US-04</td><td style="padding:8px 12px;border:1px solid #d9dee4">学習者として、本番同様の65問/130分模試を受けたい。時間配分と合否ラインの感覚を掴むため。</td></tr>
+      <tr><td style="padding:8px 12px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-weight:600">US-05</td><td style="padding:8px 12px;border:1px solid #d9dee4">学習者として、分野別の正解率をグラフで見たい。どこが弱いか一目で把握するため。</td></tr>
+      <tr><td style="padding:8px 12px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-weight:600">US-06</td><td style="padding:8px 12px;border:1px solid #d9dee4">学習者として、間違えた問題をブックマークし後でまとめて復習したい。取りこぼしを防ぐため。</td></tr>
+      <tr><td style="padding:8px 12px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-weight:600">US-07</td><td style="padding:8px 12px;border:1px solid #d9dee4">管理者（本人）として、問題と図データをJSONで一括登録・編集したい。効率よく問題を増やすため。</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ============ 4 ============ -->
+  <h2 style="font-size:20px;font-weight:900;color:#14212e;margin:34px 0 4px;padding-bottom:8px;border-bottom:2px solid #14212e">4. 機能要件</h2>
+  <p style="margin:0 0 12px">優先度は MoSCoW（<strong>M</strong>ust／<strong>S</strong>hould／<strong>C</strong>ould）で表す。各要件は受け入れ基準（AC）を満たした時点で完了とする。</p>
+
+  <h3 style="font-size:15.5px;font-weight:700;color:#c26a12;margin:22px 0 6px">4.1 問題演習</h3>
+  <table style="width:100%;border-collapse:collapse;font-size:12.5px;margin:0 0 14px">
+    <thead>
+      <tr>
+        <th style="text-align:left;background:#14212e;color:#fff;font-weight:700;padding:8px 10px;width:11%">ID</th>
+        <th style="text-align:left;background:#14212e;color:#fff;font-weight:700;padding:8px 10px;width:20%">機能</th>
+        <th style="text-align:left;background:#14212e;color:#fff;font-weight:700;padding:8px 10px">要件・受け入れ基準（AC）</th>
+        <th style="text-align:center;background:#14212e;color:#fff;font-weight:700;padding:8px 10px;width:8%">優先</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-weight:600">FR-01</td><td style="padding:8px 10px;border:1px solid #d9dee4">分野別ミニテスト</td><td style="padding:8px 10px;border:1px solid #d9dee4">4分野から任意選択し10〜20問を出題。AC: 選択分野の問題のみが出題され、問題数を10/20から選べる。</td><td style="padding:8px 10px;border:1px solid #d9dee4;text-align:center;font-weight:700;color:#c26a12">M</td></tr>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-weight:600">FR-02</td><td style="padding:8px 10px;border:1px solid #d9dee4">ランダム1問1答</td><td style="padding:8px 10px;border:1px solid #d9dee4">問題プールから1問ランダム出題し即時採点。AC: 連続で同一問題が出ない（直近N問除外）。</td><td style="padding:8px 10px;border:1px solid #d9dee4;text-align:center;font-weight:700;color:#c26a12">M</td></tr>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-weight:600">FR-03</td><td style="padding:8px 10px;border:1px solid #d9dee4">単一/複数選択</td><td style="padding:8px 10px;border:1px solid #d9dee4">問題毎に単一選択（ラジオ）／複数選択（チェック）を切替。AC: 複数選択問題は「N個選択」と明示し、全選択肢一致で正解。</td><td style="padding:8px 10px;border:1px solid #d9dee4;text-align:center;font-weight:700;color:#c26a12">M</td></tr>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-weight:600">FR-04</td><td style="padding:8px 10px;border:1px solid #d9dee4">模擬試験モード</td><td style="padding:8px 10px;border:1px solid #d9dee4">65問/130分。中断・再開、後で見直すフラグ。AC: タイマー0で自動採点、未回答は誤答扱い。</td><td style="padding:8px 10px;border:1px solid #d9dee4;text-align:center;font-weight:700;color:#c26a12">M</td></tr>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-weight:600">FR-05</td><td style="padding:8px 10px;border:1px solid #d9dee4">タイマー</td><td style="padding:8px 10px;border:1px solid #d9dee4">残り時間を常時表示。AC: 残り10分で視覚警告、リロードしても継続。</td><td style="padding:8px 10px;border:1px solid #d9dee4;text-align:center;font-weight:700;color:#3f7a54">S</td></tr>
+    </tbody>
+  </table>
+
+  <h3 style="font-size:15.5px;font-weight:700;color:#c26a12;margin:22px 0 6px">4.2 学習補助 ★最重要</h3>
+  <table style="width:100%;border-collapse:collapse;font-size:12.5px;margin:0 0 14px">
+    <thead>
+      <tr>
+        <th style="text-align:left;background:#c26a12;color:#fff;font-weight:700;padding:8px 10px;width:11%">ID</th>
+        <th style="text-align:left;background:#c26a12;color:#fff;font-weight:700;padding:8px 10px;width:20%">機能</th>
+        <th style="text-align:left;background:#c26a12;color:#fff;font-weight:700;padding:8px 10px">要件・受け入れ基準（AC）</th>
+        <th style="text-align:center;background:#c26a12;color:#fff;font-weight:700;padding:8px 10px;width:8%">優先</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-weight:600">FR-06</td><td style="padding:8px 10px;border:1px solid #d9dee4"><strong>アーキテクチャ図表示</strong></td><td style="padding:8px 10px;border:1px solid #d9dee4">解説画面中央に正解構成のインフラ構成図を大きく表示。AC: DiagramSpecを持つ問題で図が描画され、拡大表示できる。</td><td style="padding:8px 10px;border:1px solid #d9dee4;text-align:center;font-weight:700;color:#c26a12">M</td></tr>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-weight:600">FR-07</td><td style="padding:8px 10px;border:1px solid #d9dee4"><strong>図解連動ハイライト</strong></td><td style="padding:8px 10px;border:1px solid #d9dee4">解説文中の語句にホバー／タップすると対応ノードが強調（逆方向も可）。AC: 語句とノードがIDで対応づき、双方向に強調が反映される。</td><td style="padding:8px 10px;border:1px solid #d9dee4;text-align:center;font-weight:700;color:#c26a12">M</td></tr>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-weight:600">FR-17</td><td style="padding:8px 10px;border:1px solid #d9dee4"><strong>図の表示タイミング設定</strong></td><td style="padding:8px 10px;border:1px solid #d9dee4">図を「出題時（ヒント）」に見せるか「結果・解説時のみ」見せるかを設定で切替。既定は解説時。AC: 設定変更が次の出題から反映され、出題時モードでは正解を伏せたまま図をヒントとして表示できる。</td><td style="padding:8px 10px;border:1px solid #d9dee4;text-align:center;font-weight:700;color:#c26a12">M</td></tr>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-weight:600">FR-08</td><td style="padding:8px 10px;border:1px solid #d9dee4">正誤別 解説</td><td style="padding:8px 10px;border:1px solid #d9dee4">正解／各誤答の根拠を表示（例: NATゲートウェイ不在→私設サブネットから外部到達不可）。AC: 選択肢毎に◯✗と理由が表示される。</td><td style="padding:8px 10px;border:1px solid #d9dee4;text-align:center;font-weight:700;color:#c26a12">M</td></tr>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-weight:600">FR-09</td><td style="padding:8px 10px;border:1px solid #d9dee4">公式ドキュメントリンク</td><td style="padding:8px 10px;border:1px solid #d9dee4">解説からAWS公式ドキュメントへ導線。AC: 各問0件以上のリンクを別タブで開ける。</td><td style="padding:8px 10px;border:1px solid #d9dee4;text-align:center;font-weight:700;color:#3f7a54">S</td></tr>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-weight:600">FR-10</td><td style="padding:8px 10px;border:1px solid #d9dee4">ブックマーク</td><td style="padding:8px 10px;border:1px solid #d9dee4">要復習リストへの登録／解除。AC: 登録した問題が一覧に表示され、そこから再演習できる。</td><td style="padding:8px 10px;border:1px solid #d9dee4;text-align:center;font-weight:700;color:#c26a12">M</td></tr>
+    </tbody>
+  </table>
+
+  <h3 style="font-size:15.5px;font-weight:700;color:#c26a12;margin:22px 0 6px">4.3 進捗管理</h3>
+  <table style="width:100%;border-collapse:collapse;font-size:12.5px;margin:0 0 14px">
+    <thead>
+      <tr>
+        <th style="text-align:left;background:#14212e;color:#fff;font-weight:700;padding:8px 10px;width:11%">ID</th>
+        <th style="text-align:left;background:#14212e;color:#fff;font-weight:700;padding:8px 10px;width:20%">機能</th>
+        <th style="text-align:left;background:#14212e;color:#fff;font-weight:700;padding:8px 10px">要件・受け入れ基準（AC）</th>
+        <th style="text-align:center;background:#14212e;color:#fff;font-weight:700;padding:8px 10px;width:8%">優先</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-weight:600">FR-11</td><td style="padding:8px 10px;border:1px solid #d9dee4">分野別正解率グラフ</td><td style="padding:8px 10px;border:1px solid #d9dee4">4分野の正解率をレーダー／バーで可視化。AC: 回答履歴から分野別%を算出し描画。</td><td style="padding:8px 10px;border:1px solid #d9dee4;text-align:center;font-weight:700;color:#c26a12">M</td></tr>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-weight:600">FR-12</td><td style="padding:8px 10px;border:1px solid #d9dee4">総合進捗率</td><td style="padding:8px 10px;border:1px solid #d9dee4">解答済み問題数・平均正解率をダッシュボード表示。AC: ホームで一目で確認できる。</td><td style="padding:8px 10px;border:1px solid #d9dee4;text-align:center;font-weight:700;color:#3f7a54">S</td></tr>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-weight:600">FR-13</td><td style="padding:8px 10px;border:1px solid #d9dee4">模試スコア履歴</td><td style="padding:8px 10px;border:1px solid #d9dee4">受験毎のスコア・合否を時系列で保持。AC: 過去の模試結果を再閲覧できる。</td><td style="padding:8px 10px;border:1px solid #d9dee4;text-align:center;font-weight:700;color:#3f7a54">S</td></tr>
+    </tbody>
+  </table>
+
+  <h3 style="font-size:15.5px;font-weight:700;color:#c26a12;margin:22px 0 6px">4.4 管理機能（問題・図解 CRUD）</h3>
+  <table style="width:100%;border-collapse:collapse;font-size:12.5px;margin:0 0 8px">
+    <thead>
+      <tr>
+        <th style="text-align:left;background:#14212e;color:#fff;font-weight:700;padding:8px 10px;width:11%">ID</th>
+        <th style="text-align:left;background:#14212e;color:#fff;font-weight:700;padding:8px 10px;width:20%">機能</th>
+        <th style="text-align:left;background:#14212e;color:#fff;font-weight:700;padding:8px 10px">要件・受け入れ基準（AC）</th>
+        <th style="text-align:center;background:#14212e;color:#fff;font-weight:700;padding:8px 10px;width:8%">優先</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-weight:600">FR-14</td><td style="padding:8px 10px;border:1px solid #d9dee4">JSON一括インポート</td><td style="padding:8px 10px;border:1px solid #d9dee4">問題＋DiagramSpecをJSONで登録。AC: スキーマ検証に通ったデータのみ取り込み、エラー箇所を報告。</td><td style="padding:8px 10px;border:1px solid #d9dee4;text-align:center;font-weight:700;color:#c26a12">M</td></tr>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-weight:600">FR-15</td><td style="padding:8px 10px;border:1px solid #d9dee4">問題の作成・編集・削除</td><td style="padding:8px 10px;border:1px solid #d9dee4">管理画面で個別CRUD。AC: 保存後、演習側に即時反映される。</td><td style="padding:8px 10px;border:1px solid #d9dee4;text-align:center;font-weight:700;color:#3f7a54">S</td></tr>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-weight:600">FR-16</td><td style="padding:8px 10px;border:1px solid #d9dee4">図データのプレビュー</td><td style="padding:8px 10px;border:1px solid #d9dee4">DiagramSpec編集時に描画プレビュー。AC: 保存前に実際の見え方を確認できる。</td><td style="padding:8px 10px;border:1px solid #d9dee4;text-align:center;font-weight:700;color:#7a8391">C</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ============ 5 ============ -->
+  <h2 style="font-size:20px;font-weight:900;color:#14212e;margin:34px 0 4px;padding-bottom:8px;border-bottom:2px solid #14212e">5. アーキテクチャ図表示 詳細要件（コア機能）</h2>
+  <p style="margin:0 0 12px">FR-06／FR-07 を掘り下げる。本章は本アプリの心臓部であり、実装方式は技術仕様書 第4章で定義する。</p>
+
+  <h3 style="font-size:15.5px;font-weight:700;color:#c26a12;margin:22px 0 6px">5.1 表示要件</h3>
+  <ul style="margin:0 0 12px;padding-left:22px">
+    <li style="margin-bottom:5px">構成図は結果・解説画面の中央に、周辺サービス（VPC・サブネット・AZ・各種サービス）の関係が読み取れる十分な大きさで配置する。</li>
+    <li style="margin-bottom:5px">ノードはAWSサービスを表すアイコン＋ラベルを持ち、コンテナ（VPC / Availability Zone / Subnet）は入れ子の枠として描く。</li>
+    <li style="margin-bottom:5px">エッジ（接続・通信経路）は向き・ラベル（例: HTTPS, 443）を持てる。</li>
+    <li style="margin-bottom:5px">拡大／縮小・パン操作に対応し、モバイル幅でも破綻しない。</li>
+  </ul>
+
+  <h3 style="font-size:15.5px;font-weight:700;color:#c26a12;margin:22px 0 6px">5.2 解説との連動ハイライト（差別化の核心）</h3>
+  <div style="background:#fff8f0;border:1px solid #f2d9b8;border-left:4px solid #e8830c;border-radius:4px;padding:14px 18px;margin:0 0 14px">
+    <ul style="margin:0;padding-left:20px">
+      <li style="margin-bottom:6px">解説テキスト中の語句（例:「NATゲートウェイ」）と図中ノードを <span style="font-family:'JetBrains Mono',monospace;font-size:12px">refId</span> で対応づける。</li>
+      <li style="margin-bottom:6px"><strong>テキスト→図:</strong> 語句にホバー／タップで、対応ノードを強調（発光・拡大・色反転）。</li>
+      <li style="margin-bottom:6px"><strong>図→テキスト:</strong> ノードにホバー／タップで、関連する解説文をハイライト・スクロール表示。</li>
+      <li style="margin-bottom:0"><strong>誤答の可視化:</strong> 「なぜダメか」を、図中の欠落／誤配置箇所（例: NATゲートウェイが無い経路）を赤系で示して説明する。</li>
+    </ul>
+  </div>
+
+  <h3 style="font-size:15.5px;font-weight:700;color:#c26a12;margin:22px 0 6px">5.3 図データのモデル要件</h3>
+  <ul style="margin:0 0 12px;padding-left:22px">
+    <li style="margin-bottom:5px">図はDBに<strong>構造化データ（DiagramSpec: ノード・エッジ・コンテナのJSON）</strong>として保持する。静的画像URLも代替として許容する（<span style="font-family:'JetBrains Mono',monospace;font-size:12px">renderer</span>で切替）。</li>
+    <li style="margin-bottom:5px">各ノードは一意の <span style="font-family:'JetBrains Mono',monospace;font-size:12px">id</span> を持ち、解説テキストからこのIDで参照される（連動ハイライトの前提）。</li>
+    <li style="margin-bottom:5px">具体的なスキーマは技術仕様書 4.2 節で定義する。</li>
+  </ul>
+
+  <h3 style="font-size:15.5px;font-weight:700;color:#c26a12;margin:22px 0 6px">5.4 描画方式の方針</h3>
+  <table style="width:100%;border-collapse:collapse;font-size:12.5px;margin:0 0 8px">
+    <thead>
+      <tr>
+        <th style="text-align:left;background:#14212e;color:#fff;font-weight:700;padding:8px 10px;width:26%">方式</th>
+        <th style="text-align:left;background:#14212e;color:#fff;font-weight:700;padding:8px 10px">連動ハイライト適性 / 位置づけ</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4"><strong>構造化JSON＋動的描画</strong><br><span style="color:#5b6672">（採用: コア）</span></td><td style="padding:8px 10px;border:1px solid #d9dee4">◎ ノード単位でイベント・強調が可能。連動ハイライトを実現できる唯一の現実解。<strong>本アプリの標準方式。</strong></td></tr>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4">静的画像（PNG/SVG URL）<br><span style="color:#5b6672">（代替・移行用）</span></td><td style="padding:8px 10px;border:1px solid #d9dee4">△ 表示は手堅いが個別ノード連動は困難。図が未整備な問題の暫定表示に使用。</td></tr>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4">LLM自動生成<br><span style="color:#5b6672">（将来 / Phase 4+）</span></td><td style="padding:8px 10px;border:1px solid #d9dee4">— 解説文からDiagramSpecを自動生成する将来チャレンジ。MVP対象外。</td></tr>
+    </tbody>
+  </table>
+
+  <h3 style="font-size:15.5px;font-weight:700;color:#c26a12;margin:22px 0 6px">5.5 図の表示タイミング設定（FR-17）</h3>
+  <p style="margin:0 0 8px">図を「いつ見せるか」は学習効果に直結するため、ユーザーが設定で切り替えられるようにする。設定はダッシュボード（SCR-01）の学習設定エリアに置き、演習セッション開始時にも上書き選択できる。</p>
+  <table style="width:100%;border-collapse:collapse;font-size:12.5px;margin:0 0 8px">
+    <thead>
+      <tr>
+        <th style="text-align:left;background:#14212e;color:#fff;font-weight:700;padding:8px 10px;width:26%">モード</th>
+        <th style="text-align:left;background:#14212e;color:#fff;font-weight:700;padding:8px 10px">挙動 / ねらい</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-weight:600">解説時のみ<br><span style="color:#5b6672;font-weight:400">（既定）</span></td><td style="padding:8px 10px;border:1px solid #d9dee4">回答後の結果・解説画面（SCR-04）でのみ図を表示。まず自力で構成を思い描く力を鍛える、本番想定モード。</td></tr>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-weight:600">出題時（ヒント）</td><td style="padding:8px 10px;border:1px solid #d9dee4">問題演習画面（SCR-03）の問題文下に図を表示。ただし<strong>正解・正誤別解説は伏せる</strong>。図を手がかりに考える学習初期／苦手分野向けモード。</td></tr>
+    </tbody>
+  </table>
+  <p style="margin:0 0 12px;font-size:12.5px;color:#5b6672">※ 模擬試験モード（FR-04）では公平性のため、設定に関わらず「解説時のみ」を強制する。</p>
+
+  <!-- ============ 6 ============ -->
+  <h2 style="font-size:20px;font-weight:900;color:#14212e;margin:34px 0 4px;padding-bottom:8px;border-bottom:2px solid #14212e">6. 画面要件・画面遷移</h2>
+
+  <h3 style="font-size:15.5px;font-weight:700;color:#c26a12;margin:22px 0 6px">6.1 画面一覧と遷移</h3>
+  <div style="border:1px solid #d9dee4;border-radius:6px;padding:22px 18px;margin:0 0 14px;background:#fbfcfd">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:12px;font-size:12.5px;font-weight:600">
+      <div style="background:#14212e;color:#fff;padding:10px 20px;border-radius:6px">SCR-01 ダッシュボード（ホーム）</div>
+      <div style="color:#9aa4b0;font-size:16px">↓</div>
+      <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center">
+        <div style="background:#fff;border:1.5px solid #14212e;color:#14212e;padding:8px 16px;border-radius:6px">SCR-02 演習設定</div>
+        <div style="background:#fff;border:1.5px solid #14212e;color:#14212e;padding:8px 16px;border-radius:6px">SCR-05 ブックマーク</div>
+        <div style="background:#fff;border:1.5px solid #14212e;color:#14212e;padding:8px 16px;border-radius:6px">SCR-06 進捗分析</div>
+        <div style="background:#fff;border:1.5px solid #7a8391;color:#5b6672;padding:8px 16px;border-radius:6px">SCR-07 管理</div>
+      </div>
+      <div style="color:#9aa4b0;font-size:16px">↓</div>
+      <div style="background:#fff;border:1.5px solid #14212e;color:#14212e;padding:8px 16px;border-radius:6px">SCR-03 問題演習（出題・回答）</div>
+      <div style="color:#9aa4b0;font-size:16px">↓</div>
+      <div style="background:#e8830c;color:#fff;padding:10px 20px;border-radius:6px;font-weight:700">SCR-04 結果・解説（アーキテクチャ図 ★）</div>
+    </div>
+  </div>
+
+  <h3 style="font-size:15.5px;font-weight:700;color:#c26a12;margin:22px 0 6px">6.2 主要画面のUI要件</h3>
+  <table style="width:100%;border-collapse:collapse;font-size:12.5px;margin:0 0 8px">
+    <thead>
+      <tr>
+        <th style="text-align:left;background:#14212e;color:#fff;font-weight:700;padding:8px 10px;width:11%">ID</th>
+        <th style="text-align:left;background:#14212e;color:#fff;font-weight:700;padding:8px 10px;width:22%">画面</th>
+        <th style="text-align:left;background:#14212e;color:#fff;font-weight:700;padding:8px 10px">主要要素</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-weight:600">SCR-01</td><td style="padding:8px 10px;border:1px solid #d9dee4">ダッシュボード</td><td style="padding:8px 10px;border:1px solid #d9dee4">総合進捗率、分野別レーダーチャート、各テストへの導線、直近の模試スコア。</td></tr>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-weight:600">SCR-02</td><td style="padding:8px 10px;border:1px solid #d9dee4">演習設定</td><td style="padding:8px 10px;border:1px solid #d9dee4">モード（ミニ/ランダム/模試）、分野、問題数の選択。</td></tr>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-weight:600">SCR-03</td><td style="padding:8px 10px;border:1px solid #d9dee4">問題演習</td><td style="padding:8px 10px;border:1px solid #d9dee4">問題文、単一/複数選択肢、タイマー、進捗（n/N）、[回答する]、見直しフラグ。</td></tr>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-weight:600;background:#fff8f0">SCR-04</td><td style="padding:8px 10px;border:1px solid #d9dee4;background:#fff8f0"><strong>結果・解説 ★</strong></td><td style="padding:8px 10px;border:1px solid #d9dee4;background:#fff8f0">得点率・合否、各問正誤一覧、<strong>中央に大きなアーキテクチャ図</strong>、図と連動する正誤別解説、公式リンク、ブックマーク登録。</td></tr>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-weight:600">SCR-05</td><td style="padding:8px 10px;border:1px solid #d9dee4">ブックマーク</td><td style="padding:8px 10px;border:1px solid #d9dee4">要復習問題の一覧、絞り込み、そこからの再演習。</td></tr>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-weight:600">SCR-06</td><td style="padding:8px 10px;border:1px solid #d9dee4">進捗分析</td><td style="padding:8px 10px;border:1px solid #d9dee4">分野別正解率、弱点分野の抽出、模試スコア推移。</td></tr>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-weight:600">SCR-07</td><td style="padding:8px 10px;border:1px solid #d9dee4">管理</td><td style="padding:8px 10px;border:1px solid #d9dee4">JSONインポート、問題CRUD、DiagramSpecプレビュー。</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ============ 7 ============ -->
+  <h2 style="font-size:20px;font-weight:900;color:#14212e;margin:34px 0 4px;padding-bottom:8px;border-bottom:2px solid #14212e">7. データ要件</h2>
+  <h3 style="font-size:15.5px;font-weight:700;color:#c26a12;margin:22px 0 6px">7.1 主要エンティティ</h3>
+  <table style="width:100%;border-collapse:collapse;font-size:12.5px;margin:0 0 14px">
+    <thead>
+      <tr>
+        <th style="text-align:left;background:#14212e;color:#fff;font-weight:700;padding:8px 10px;width:22%">エンティティ</th>
+        <th style="text-align:left;background:#14212e;color:#fff;font-weight:700;padding:8px 10px">概要</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-weight:600">Question</td><td style="padding:8px 10px;border:1px solid #d9dee4">問題文・分野・選択肢・正解・解説・DiagramSpec・公式リンクを持つ中核。</td></tr>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-weight:600">Choice</td><td style="padding:8px 10px;border:1px solid #d9dee4">選択肢（本文・正誤・その選択肢固有の解説）。</td></tr>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-weight:600">DiagramSpec</td><td style="padding:8px 10px;border:1px solid #d9dee4">ノード・エッジ・コンテナで構成図を表す構造化データ。</td></tr>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-weight:600">Attempt</td><td style="padding:8px 10px;border:1px solid #d9dee4">1問の解答記録（選択・正誤・所要時間・日時）。正解率算出の元。</td></tr>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-weight:600">ExamSession</td><td style="padding:8px 10px;border:1px solid #d9dee4">模試1回分（出題セット・残り時間・スコア・合否）。</td></tr>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-weight:600">Bookmark</td><td style="padding:8px 10px;border:1px solid #d9dee4">要復習登録（問題への参照）。</td></tr>
+    </tbody>
+  </table>
+
+  <h3 style="font-size:15.5px;font-weight:700;color:#c26a12;margin:22px 0 6px">7.2 問題データ サンプル（図解連動つき）</h3>
+  <p style="margin:0 0 8px;font-size:13px;color:#5b6672">連動ハイライトの鍵は、解説文の <span style="font-family:'JetBrains Mono',monospace;font-size:12px">refIds</span> と DiagramSpec の <span style="font-family:'JetBrains Mono',monospace;font-size:12px">node.id</span> が一致すること。完全なスキーマは技術仕様書 第7章、実データは <span style="font-family:'JetBrains Mono',monospace;font-size:12px">data/questions.sample.json</span> を参照。</p>
+  <pre style="background:#0f1722;color:#e6edf3;font-family:'JetBrains Mono',monospace;font-size:11.5px;line-height:1.7;padding:16px;border-radius:6px;overflow-x:auto;margin:0 0 8px;white-space:pre">{
+  "id": "Q-0001",
+  "domain": "SECURE_ARCH",
+  "type": "single",
+  "stem": "プライベートサブネットのEC2からOSパッチを取得したい。VPC外への安全な通信経路は？",
+  "choices": [
+    { "id": "a", "text": "NATゲートウェイをパブリックサブネットに配置", "correct": true },
+    { "id": "b", "text": "インターネットゲートウェイをEC2に直接アタッチ", "correct": false,
+      "why": "プライベートサブネットにパブリックIPは付与されず到達不可" }
+  ],
+  "explanation": {
+    "summary": "外部到達には <ref id='nat'>NATゲートウェイ</ref> を経由する。",
+    "refIds": ["nat", "igw", "ec2"]
+  },
+  "diagram": {
+    "renderer": "spec",
+    "containers": [
+      { "id": "vpc", "type": "VPC", "label": "VPC 10.0.0.0/16" }
+    ],
+    "nodes": [
+      { "id": "ec2", "service": "EC2", "label": "App Server", "parent": "vpc" },
+      { "id": "nat", "service": "NATGateway", "label": "NAT GW", "parent": "vpc" },
+      { "id": "igw", "service": "InternetGateway", "label": "IGW" }
+    ],
+    "edges": [
+      { "from": "ec2", "to": "nat", "label": "outbound" },
+      { "from": "nat", "to": "igw" }
+    ]
+  },
+  "docLinks": [
+    { "title": "NAT gateways", "url": "https://docs.aws.amazon.com/vpc/latest/userguide/vpc-nat-gateway.html" }
+  ]
+}</pre>
+
+  <!-- ============ 8 ============ -->
+  <h2 style="font-size:20px;font-weight:900;color:#14212e;margin:34px 0 4px;padding-bottom:8px;border-bottom:2px solid #14212e">8. 非機能要件</h2>
+  <table style="width:100%;border-collapse:collapse;font-size:12.5px;margin:0 0 8px">
+    <thead>
+      <tr>
+        <th style="text-align:left;background:#14212e;color:#fff;font-weight:700;padding:8px 10px;width:11%">ID</th>
+        <th style="text-align:left;background:#14212e;color:#fff;font-weight:700;padding:8px 10px;width:20%">分類</th>
+        <th style="text-align:left;background:#14212e;color:#fff;font-weight:700;padding:8px 10px">要件</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-weight:600">NFR-01</td><td style="padding:8px 10px;border:1px solid #d9dee4">性能</td><td style="padding:8px 10px;border:1px solid #d9dee4">問題遷移は体感1秒以内、図描画は2秒以内。100問規模でも快適に動作。</td></tr>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-weight:600">NFR-02</td><td style="padding:8px 10px;border:1px solid #d9dee4">対応環境</td><td style="padding:8px 10px;border:1px solid #d9dee4">PC/タブレットの最新Chrome・Safari・Edge。レスポンシブ対応（当面Webのみ）。</td></tr>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-weight:600">NFR-03</td><td style="padding:8px 10px;border:1px solid #d9dee4">可用性/保守性</td><td style="padding:8px 10px;border:1px solid #d9dee4">問題データはコード外（JSON/DB）で管理し、非エンジニアでも追記可能な構造にする。</td></tr>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-weight:600">NFR-04</td><td style="padding:8px 10px;border:1px solid #d9dee4">セキュリティ</td><td style="padding:8px 10px;border:1px solid #d9dee4">管理機能は認証で保護。初期は単一ユーザー前提だが、将来のマルチユーザー化を阻害しない設計とする。</td></tr>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-weight:600">NFR-05</td><td style="padding:8px 10px;border:1px solid #d9dee4">データ整合性</td><td style="padding:8px 10px;border:1px solid #d9dee4">インポート時にスキーマ検証。refIdとnode.idの不整合を警告する。</td></tr>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-weight:600">NFR-06</td><td style="padding:8px 10px;border:1px solid #d9dee4">コスト</td><td style="padding:8px 10px;border:1px solid #d9dee4">個人利用のため無料枠中心。サーバーレス従量課金でアイドル時コストを最小化。</td></tr>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-weight:600">NFR-07</td><td style="padding:8px 10px;border:1px solid #d9dee4">アクセシビリティ</td><td style="padding:8px 10px;border:1px solid #d9dee4">図の情報はテキスト解説でも同等に得られる（色のみに依存しない）。</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ============ 9 ============ -->
+  <h2 style="font-size:20px;font-weight:900;color:#14212e;margin:34px 0 4px;padding-bottom:8px;border-bottom:2px solid #14212e">9. 制約・前提条件</h2>
+  <ul style="margin:0 0 6px;padding-left:22px">
+    <li style="margin-bottom:5px">開発・運用は個人。低コスト・低運用負荷を優先する。</li>
+    <li style="margin-bottom:5px">AWSの学習を兼ねるため、インフラは可能な範囲でAWSサーバーレスを採用する（技術仕様書で定義）。</li>
+    <li style="margin-bottom:5px">問題文・解説・図データの著作権はオリジナル作成とし、AWS公式ドキュメントは引用リンクに留める。</li>
+    <li style="margin-bottom:5px">本試験の設問そのものの転載は行わない。</li>
+  </ul>
+
+  <div style="margin-top:28px;padding-top:14px;border-top:1px solid #d9dee4;font-size:11px;color:#9aa4b0;font-family:'JetBrains Mono',monospace;display:flex;justify-content:space-between">
+    <span>DOC-REQ-001 — AWS SAA 学習アプリ 詳細要件定義書</span>
+    <span>v1.0 / 2026-07-04</span>
+  </div>
+
+</div>
+</x-import>
+</x-dc>
+</body>
+</html>

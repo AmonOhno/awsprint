@@ -1,0 +1,283 @@
+[
+  {
+    "id": "Q-0001",
+    "domain": "SECURE_ARCH",
+    "type": "single",
+    "stem": "プライベートサブネットのEC2インスタンスからOSパッチを取得したい。VPC外への安全なアウトバウンド通信経路として適切なものはどれか。",
+    "choices": [
+      {
+        "id": "a",
+        "text": "NATゲートウェイをパブリックサブネットに配置し、プライベートサブネットのルートテーブルから向ける",
+        "correct": true,
+        "why": "<ref id=\"nat\">NATゲートウェイ</ref>経由でアウトバウンドのみ許可され、外部からの着信は遮断される。"
+      },
+      {
+        "id": "b",
+        "text": "インターネットゲートウェイをEC2インスタンスに直接アタッチする",
+        "correct": false,
+        "why": "<ref id=\"igw\">IGW</ref>はVPCにアタッチするものであり、またプライベートサブネットの<ref id=\"ec2\">EC2</ref>にはパブリックIPが無く到達不可。"
+      },
+      {
+        "id": "c",
+        "text": "EC2にElastic IPを付与してパブリックサブネットへ移動する",
+        "correct": false,
+        "why": "外部から直接到達可能になり、プライベート配置の要件（攻撃面の最小化）を満たさない。"
+      },
+      {
+        "id": "d",
+        "text": "セキュリティグループでアウトバウンド443を許可するだけでよい",
+        "correct": false,
+        "why": "SGの許可だけでは経路が存在しない。プライベートサブネットからVPC外への経路（NAT）が必要。"
+      }
+    ],
+    "explanation": {
+      "summary": "プライベートサブネットの<ref id=\"ec2\">EC2</ref>から外部へ出るには、パブリックサブネットの<ref id=\"nat\">NATゲートウェイ</ref>を経由し、<ref id=\"igw\">インターネットゲートウェイ</ref>から出る構成が定石。戻りの通信はNATが状態管理するため、外部からの新規着信は届かない。",
+      "refIds": ["ec2", "nat", "igw"]
+    },
+    "diagram": {
+      "renderer": "spec",
+      "containers": [
+        { "id": "vpc", "type": "VPC", "label": "VPC 10.0.0.0/16" },
+        { "id": "pub", "type": "PublicSubnet", "label": "Public Subnet", "parent": "vpc" },
+        { "id": "priv", "type": "PrivateSubnet", "label": "Private Subnet", "parent": "vpc" }
+      ],
+      "nodes": [
+        { "id": "ec2", "service": "EC2", "label": "App Server", "parent": "priv" },
+        { "id": "nat", "service": "NATGateway", "label": "NAT GW", "parent": "pub" },
+        { "id": "igw", "service": "InternetGateway", "label": "IGW" }
+      ],
+      "edges": [
+        { "from": "ec2", "to": "nat", "label": "outbound 443" },
+        { "from": "nat", "to": "igw" }
+      ]
+    },
+    "docLinks": [
+      { "title": "NAT gateways", "url": "https://docs.aws.amazon.com/vpc/latest/userguide/vpc-nat-gateway.html" }
+    ],
+    "tags": ["VPC", "NAT", "ネットワーク"]
+  },
+  {
+    "id": "Q-0002",
+    "domain": "RESILIENT",
+    "type": "single",
+    "stem": "単一AZで稼働するWebアプリの可用性を高めたい。1つのAZ障害でもサービスを継続できる構成はどれか。",
+    "choices": [
+      {
+        "id": "a",
+        "text": "ALBの背後で、Auto Scalingグループを複数AZのEC2に分散させる",
+        "correct": true,
+        "why": "<ref id=\"alb\">ALB</ref>がヘルスチェックで正常なAZの<ref id=\"ec2a\">インスタンス</ref>へのみ振り分け、<ref id=\"asg\">ASG</ref>が台数を自動回復する。"
+      },
+      {
+        "id": "b",
+        "text": "同一AZ内でEC2インスタンスを2台に増やす",
+        "correct": false,
+        "why": "AZ自体の障害で全台が同時に停止する。台数冗長はAZ障害への対策にならない。"
+      },
+      {
+        "id": "c",
+        "text": "インスタンスサイズを大きくして耐障害性を上げる",
+        "correct": false,
+        "why": "垂直スケーリングは性能対策であり、単一障害点は解消されない。"
+      },
+      {
+        "id": "d",
+        "text": "Route 53のTTLを短くする",
+        "correct": false,
+        "why": "DNS切替の高速化は補助にはなるが、切替先となる別AZの実行基盤が無ければ継続できない。"
+      }
+    ],
+    "explanation": {
+      "summary": "高可用性の基本形は、<ref id=\"alb\">ALB</ref>＋<ref id=\"asg\">Auto Scaling</ref>で複数AZ（<ref id=\"ec2a\">AZ-a</ref>／<ref id=\"ec2c\">AZ-c</ref>）にインスタンスを分散する構成。AZ障害時はヘルスチェックで異常系が切り離され、ASGが残るAZで必要台数を回復する。",
+      "refIds": ["alb", "asg", "ec2a", "ec2c"]
+    },
+    "diagram": {
+      "renderer": "spec",
+      "containers": [
+        { "id": "vpc", "type": "VPC", "label": "VPC" },
+        { "id": "aza", "type": "AZ", "label": "AZ-a", "parent": "vpc" },
+        { "id": "azc", "type": "AZ", "label": "AZ-c", "parent": "vpc" }
+      ],
+      "nodes": [
+        { "id": "alb", "service": "ALB", "label": "Application LB", "parent": "vpc" },
+        { "id": "ec2a", "service": "EC2", "label": "Web (AZ-a)", "parent": "aza" },
+        { "id": "ec2c", "service": "EC2", "label": "Web (AZ-c)", "parent": "azc" },
+        { "id": "asg", "service": "AutoScaling", "label": "Auto Scaling Group", "parent": "vpc" }
+      ],
+      "edges": [
+        { "from": "alb", "to": "ec2a", "label": "HTTP" },
+        { "from": "alb", "to": "ec2c", "label": "HTTP" },
+        { "from": "asg", "to": "ec2a", "label": "manage", "directed": true },
+        { "from": "asg", "to": "ec2c", "label": "manage", "directed": true }
+      ]
+    },
+    "docLinks": [
+      { "title": "Elastic Load Balancing", "url": "https://docs.aws.amazon.com/elasticloadbalancing/latest/userguide/what-is-load-balancing.html" },
+      { "title": "Amazon EC2 Auto Scaling", "url": "https://docs.aws.amazon.com/autoscaling/ec2/userguide/what-is-amazon-ec2-auto-scaling.html" }
+    ],
+    "tags": ["高可用性", "マルチAZ", "ALB"]
+  },
+  {
+    "id": "Q-0003",
+    "domain": "HIGH_PERF",
+    "type": "single",
+    "stem": "S3でホストする静的コンテンツをグローバルの利用者へ低レイテンシで配信したい。最も適切な構成はどれか。",
+    "choices": [
+      {
+        "id": "a",
+        "text": "CloudFrontディストリビューションのオリジンにS3バケットを設定する",
+        "correct": true,
+        "why": "<ref id=\"cf\">CloudFront</ref>のエッジで<ref id=\"s3\">S3</ref>のコンテンツがキャッシュされ、利用者に最も近い拠点から配信される。"
+      },
+      {
+        "id": "b",
+        "text": "各リージョンにS3バケットを複製して利用者にURLを使い分けさせる",
+        "correct": false,
+        "why": "同期・URL管理の運用負荷が高く、エッジキャッシュ（CDN）で解決できる課題に対して過剰。"
+      },
+      {
+        "id": "c",
+        "text": "S3の前段に大きめのEC2キャッシュサーバーを1台置く",
+        "correct": false,
+        "why": "単一拠点・単一障害点となり、グローバル低レイテンシは実現できない。"
+      },
+      {
+        "id": "d",
+        "text": "S3 Transfer Accelerationを有効にする",
+        "correct": false,
+        "why": "Transfer Accelerationは主にS3への「アップロード」高速化であり、配信のキャッシュ用途にはCloudFrontが適切。"
+      }
+    ],
+    "explanation": {
+      "summary": "静的配信の定石は<ref id=\"s3\">S3</ref>をオリジンとする<ref id=\"cf\">CloudFront</ref>。世界中のエッジロケーションでキャッシュされ、<ref id=\"user\">利用者</ref>は最寄りエッジから取得するためレイテンシとオリジン負荷の両方が下がる。",
+      "refIds": ["user", "cf", "s3"]
+    },
+    "diagram": {
+      "renderer": "spec",
+      "nodes": [
+        { "id": "user", "service": "Users", "label": "Global Users" },
+        { "id": "cf", "service": "CloudFront", "label": "CloudFront (Edge)" },
+        { "id": "s3", "service": "S3", "label": "S3 Bucket (Origin)" }
+      ],
+      "edges": [
+        { "from": "user", "to": "cf", "label": "HTTPS（最寄りエッジ）" },
+        { "from": "cf", "to": "s3", "label": "キャッシュミス時のみ" }
+      ]
+    },
+    "docLinks": [
+      { "title": "Amazon CloudFront とは", "url": "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Introduction.html" }
+    ],
+    "tags": ["CDN", "S3", "キャッシュ"]
+  },
+  {
+    "id": "Q-0004",
+    "domain": "COST_OPT",
+    "type": "single",
+    "stem": "アプリのログをS3に保存している。直近90日はたまに参照するが、それ以降はほぼ参照せず、監査のため5年間保管が必要。最もコスト効率の良い方法はどれか。",
+    "choices": [
+      {
+        "id": "a",
+        "text": "ライフサイクルルールで90日後にS3 Glacier Flexible Retrievalへ移行し、5年後に削除する",
+        "correct": true,
+        "why": "<ref id=\"lifecycle\">ライフサイクルルール</ref>で自動的に<ref id=\"glacier\">Glacier</ref>へ移行・期限削除でき、運用レスで保管コストを最小化できる。"
+      },
+      {
+        "id": "b",
+        "text": "S3 Standardに置き続ける",
+        "correct": false,
+        "why": "ほぼ参照しないデータをStandardに置くのは保管単価が高く、コスト最適化にならない。"
+      },
+      {
+        "id": "c",
+        "text": "EBSスナップショットにコピーして保管する",
+        "correct": false,
+        "why": "EBSはブロックストレージでありログのアーカイブ用途に不適。単価もアーカイブ向けストレージより高い。"
+      },
+      {
+        "id": "d",
+        "text": "定期バッチでダウンロードしオフィスのNASへ保管する",
+        "correct": false,
+        "why": "耐久性・監査性・運用負荷のすべてで劣り、転送の手間も発生する。"
+      }
+    ],
+    "explanation": {
+      "summary": "アクセス頻度が時間とともに下がるデータは、<ref id=\"s3std\">S3 Standard</ref>から<ref id=\"lifecycle\">ライフサイクルルール</ref>で<ref id=\"glacier\">Glacier</ref>系ストレージクラスへ自動移行するのが定石。保持期限後の自動削除まで宣言的に設定できる。",
+      "refIds": ["s3std", "lifecycle", "glacier"]
+    },
+    "diagram": {
+      "renderer": "spec",
+      "nodes": [
+        { "id": "app", "service": "EC2", "label": "App (ログ出力)" },
+        { "id": "s3std", "service": "S3", "label": "S3 Standard（〜90日）" },
+        { "id": "lifecycle", "service": "S3Lifecycle", "label": "ライフサイクルルール" },
+        { "id": "glacier", "service": "S3Glacier", "label": "Glacier（〜5年）" }
+      ],
+      "edges": [
+        { "from": "app", "to": "s3std", "label": "put logs" },
+        { "from": "s3std", "to": "glacier", "label": "90日後に移行" },
+        { "from": "lifecycle", "to": "s3std", "label": "rule" },
+        { "from": "lifecycle", "to": "glacier", "label": "5年後に削除" }
+      ]
+    },
+    "docLinks": [
+      { "title": "S3 ライフサイクルの管理", "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lifecycle-mgmt.html" }
+    ],
+    "tags": ["S3", "ストレージクラス", "ライフサイクル"]
+  },
+  {
+    "id": "Q-0005",
+    "domain": "SECURE_ARCH",
+    "type": "multiple",
+    "stem": "パブリックアクセスを禁止すべきS3バケットに、VPC内のEC2からのみ安全にアクセスさせたい。適切な対策を2つ選べ。",
+    "choices": [
+      {
+        "id": "a",
+        "text": "S3用のゲートウェイ型VPCエンドポイントを作成する",
+        "correct": true,
+        "why": "<ref id=\"vpce\">VPCエンドポイント</ref>経由でインターネットに出ずに<ref id=\"s3\">S3</ref>へ到達できる。"
+      },
+      {
+        "id": "b",
+        "text": "バケットポリシーでVPCエンドポイント経由以外のアクセスを拒否する",
+        "correct": true,
+        "why": "aws:SourceVpce条件で経路を強制し、意図しない経路からのアクセスを遮断できる。"
+      },
+      {
+        "id": "c",
+        "text": "バケットを公開設定にしてIP制限をかける",
+        "correct": false,
+        "why": "パブリック公開が前提になってしまい要件に反する。IP制限は経路の保証にならない。"
+      },
+      {
+        "id": "d",
+        "text": "EC2にインターネットゲートウェイ経由でアクセスさせる",
+        "correct": false,
+        "why": "インターネット経由の経路が生まれ、閉域でのアクセスという要件を満たさない。"
+      }
+    ],
+    "explanation": {
+      "summary": "閉域アクセスの定石は、<ref id=\"vpce\">ゲートウェイ型VPCエンドポイント</ref>で<ref id=\"ec2\">EC2</ref>から<ref id=\"s3\">S3</ref>への経路をVPC内に閉じ、さらにバケットポリシーでそのエンドポイント経由のみを許可する多層防御。",
+      "refIds": ["ec2", "vpce", "s3"]
+    },
+    "diagram": {
+      "renderer": "spec",
+      "containers": [
+        { "id": "vpc", "type": "VPC", "label": "VPC" },
+        { "id": "priv", "type": "PrivateSubnet", "label": "Private Subnet", "parent": "vpc" }
+      ],
+      "nodes": [
+        { "id": "ec2", "service": "EC2", "label": "App Server", "parent": "priv" },
+        { "id": "vpce", "service": "VPCEndpoint", "label": "Gateway VPC Endpoint", "parent": "vpc" },
+        { "id": "s3", "service": "S3", "label": "S3 (非公開バケット)" }
+      ],
+      "edges": [
+        { "from": "ec2", "to": "vpce", "label": "AWS内経路" },
+        { "from": "vpce", "to": "s3", "label": "SourceVpce条件で許可" }
+      ]
+    },
+    "docLinks": [
+      { "title": "Gateway endpoints for Amazon S3", "url": "https://docs.aws.amazon.com/vpc/latest/privatelink/vpc-endpoints-s3.html" }
+    ],
+    "tags": ["S3", "VPCエンドポイント", "バケットポリシー"]
+  }
+]

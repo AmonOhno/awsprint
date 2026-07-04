@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  doc-page:not(:defined){visibility:hidden}
+  body{margin:0}
+</style>
+</helmet>
+
+<x-import component-from-global-scope="doc-page" from="./doc-page.js" size="a4" margin="18mm" hint-size="100%,100%">
+<div style="font-family:'Noto Sans JP',sans-serif;color:#212a35;font-size:14.5px;line-height:1.85;font-weight:400;-webkit-font-smoothing:antialiased">
+
+  <div style="display:flex;align-items:center;gap:10px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.18em;color:#2a6db5;font-weight:600;text-transform:uppercase;margin-bottom:14px">
+    <span style="width:26px;height:2px;background:#2a6db5;display:inline-block"></span>
+    TECHNICAL SPECIFICATION
+  </div>
+
+  <h1 style="font-size:30px;font-weight:900;color:#14212e;line-height:1.35;margin:0 0 6px;letter-spacing:-0.01em">AWS SAA 学習アプリ<br>技術仕様書</h1>
+  <p style="font-size:15px;color:#5b6672;margin:0 0 22px;font-weight:500">DOC-REQ-001「詳細要件定義書」を実装するためのアーキテクチャ・データ・API設計</p>
+
+  <table style="width:100%;border-collapse:collapse;font-size:12.5px;margin:0 0 30px;border:1px solid #d9dee4">
+    <tbody>
+      <tr>
+        <th style="text-align:left;background:#f4f6f8;color:#14212e;font-weight:700;padding:8px 12px;border:1px solid #d9dee4;width:22%">文書ID</th>
+        <td style="padding:8px 12px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace">DOC-SPEC-001</td>
+        <th style="text-align:left;background:#f4f6f8;color:#14212e;font-weight:700;padding:8px 12px;border:1px solid #d9dee4;width:22%">バージョン</th>
+        <td style="padding:8px 12px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace">1.0</td>
+      </tr>
+      <tr>
+        <th style="text-align:left;background:#f4f6f8;color:#14212e;font-weight:700;padding:8px 12px;border:1px solid #d9dee4">作成日</th>
+        <td style="padding:8px 12px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace">2026-07-04</td>
+        <th style="text-align:left;background:#f4f6f8;color:#14212e;font-weight:700;padding:8px 12px;border:1px solid #d9dee4">ステータス</th>
+        <td style="padding:8px 12px;border:1px solid #d9dee4"><span style="background:#e7f0fb;color:#2a6db5;font-weight:700;font-size:11px;padding:2px 8px;border-radius:3px">DRAFT / レビュー用</span></td>
+      </tr>
+      <tr>
+        <th style="text-align:left;background:#f4f6f8;color:#14212e;font-weight:700;padding:8px 12px;border:1px solid #d9dee4">前提文書</th>
+        <td colspan="3" style="padding:8px 12px;border:1px solid #d9dee4">DOC-REQ-001「詳細要件定義書」の機能要件（FR-xx）・非機能要件（NFR-xx）を満たすことを目的とする。</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ============ 1 ============ -->
+  <h2 style="font-size:20px;font-weight:900;color:#14212e;margin:34px 0 4px;padding-bottom:8px;border-bottom:2px solid #14212e">1. 設計方針</h2>
+  <ul style="margin:14px 0 12px;padding-left:22px">
+    <li style="margin-bottom:6px"><strong>サーバーレス優先:</strong> 個人運用のアイドルコスト最小化（NFR-06）と、AWS学習の実地化を兼ねる。</li>
+    <li style="margin-bottom:6px"><strong>データ駆動:</strong> 問題・図はコード外のJSON/DBで管理し、追記だけで拡張できる（NFR-03）。</li>
+    <li style="margin-bottom:6px"><strong>図はコア:</strong> 連動ハイライト（FR-07）を実現するため、図を構造化データ＋動的描画で扱うことを設計の中心に置く。</li>
+    <li style="margin-bottom:6px"><strong>段階的移行:</strong> Phase 2まではローカルJSON＋ブラウザ保存で素早く動かし、Phase 3以降でAWSバックエンドへ拡張する（差し替え可能な抽象化）。</li>
+  </ul>
+
+  <!-- ============ 2 ============ -->
+  <h2 style="font-size:20px;font-weight:900;color:#14212e;margin:34px 0 4px;padding-bottom:8px;border-bottom:2px solid #14212e">2. システムアーキテクチャ</h2>
+
+  <h3 style="font-size:15.5px;font-weight:700;color:#2a6db5;margin:22px 0 6px">2.1 構成図</h3>
+  <div style="border:1px solid #d9dee4;border-radius:6px;padding:20px 16px;margin:0 0 8px;background:#fbfcfd">
+    <div style="display:flex;flex-direction:column;gap:14px;font-size:12px;font-weight:600">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="width:78px;color:#5b6672;font-size:11px">Client</span>
+        <div style="flex:1;display:flex;gap:10px;flex-wrap:wrap">
+          <div style="background:#14212e;color:#fff;padding:8px 14px;border-radius:6px">Next.js SPA/SSR（ブラウザ）</div>
+          <div style="background:#eef1f4;color:#14212e;padding:8px 14px;border-radius:6px;border:1px solid #d9dee4">React Flow 図レンダラ</div>
+          <div style="background:#eef1f4;color:#14212e;padding:8px 14px;border-radius:6px;border:1px solid #d9dee4">Recharts 進捗グラフ</div>
+        </div>
+      </div>
+      <div style="text-align:center;color:#9aa4b0">▼ HTTPS / JSON (REST)</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="width:78px;color:#5b6672;font-size:11px">Edge/Host</span>
+        <div style="flex:1;display:flex;gap:10px;flex-wrap:wrap">
+          <div style="background:#2a6db5;color:#fff;padding:8px 14px;border-radius:6px">CloudFront + S3（静的配信）</div>
+          <div style="background:#2a6db5;color:#fff;padding:8px 14px;border-radius:6px">API Gateway</div>
+          <div style="background:#3f7a54;color:#fff;padding:8px 14px;border-radius:6px">Cognito（認証）</div>
+        </div>
+      </div>
+      <div style="text-align:center;color:#9aa4b0">▼</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="width:78px;color:#5b6672;font-size:11px">Compute/Data</span>
+        <div style="flex:1;display:flex;gap:10px;flex-wrap:wrap">
+          <div style="background:#e8830c;color:#fff;padding:8px 14px;border-radius:6px">Lambda（API / TypeScript）</div>
+          <div style="background:#14212e;color:#fff;padding:8px 14px;border-radius:6px">DynamoDB（シングルテーブル）</div>
+          <div style="background:#eef1f4;color:#14212e;padding:8px 14px;border-radius:6px;border:1px solid #d9dee4">S3（図の静的画像・代替）</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p style="margin:0 0 12px;font-size:12.5px;color:#5b6672">※ Phase 2のMVPは、上記のうちクライアント＋ローカルJSON＋ブラウザ保存（IndexedDB/localStorage）のみで完結させ、Phase 3でAPI Gateway以降を追加する。</p>
+
+  <h3 style="font-size:15.5px;font-weight:700;color:#2a6db5;margin:22px 0 6px">2.2 技術スタック選定</h3>
+  <table style="width:100%;border-collapse:collapse;font-size:12.5px;margin:0 0 8px">
+    <thead>
+      <tr>
+        <th style="text-align:left;background:#14212e;color:#fff;font-weight:700;padding:8px 10px;width:18%">レイヤ</th>
+        <th style="text-align:left;background:#14212e;color:#fff;font-weight:700;padding:8px 10px;width:26%">採用技術</th>
+        <th style="text-align:left;background:#14212e;color:#fff;font-weight:700;padding:8px 10px">選定理由</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-weight:600">フロントエンド</td><td style="padding:8px 10px;border:1px solid #d9dee4">Next.js (App Router) + TypeScript</td><td style="padding:8px 10px;border:1px solid #d9dee4">SSR/静的出力の両対応、S3/CloudFront・Amplifyへ素直にデプロイ可。型安全でデータ構造を守れる。</td></tr>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-weight:600">UI</td><td style="padding:8px 10px;border:1px solid #d9dee4">Tailwind CSS + Radix UI</td><td style="padding:8px 10px;border:1px solid #d9dee4">素早く一貫したUI。アクセシブルな基本部品。</td></tr>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-weight:600;background:#eef5fc">図レンダリング</td><td style="padding:8px 10px;border:1px solid #d9dee4;background:#eef5fc"><strong>React Flow</strong>（＋補完でMermaid）</td><td style="padding:8px 10px;border:1px solid #d9dee4;background:#eef5fc"><strong>ノード単位でイベント・強調が可能</strong>＝連動ハイライト(FR-07)の実現手段。カスタムAWSアイコンノード・入れ子コンテナ・パン/ズームに対応。</td></tr>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-weight:600">状態管理</td><td style="padding:8px 10px;border:1px solid #d9dee4">Zustand + TanStack Query</td><td style="padding:8px 10px;border:1px solid #d9dee4">演習セッション等のUI状態はZustand、サーバーデータ取得/キャッシュはQuery。</td></tr>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-weight:600">グラフ</td><td style="padding:8px 10px;border:1px solid #d9dee4">Recharts</td><td style="padding:8px 10px;border:1px solid #d9dee4">レーダー/バー（FR-11）を宣言的に実装。</td></tr>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-weight:600">バックエンド</td><td style="padding:8px 10px;border:1px solid #d9dee4">Lambda + API Gateway (TypeScript)</td><td style="padding:8px 10px;border:1px solid #d9dee4">従量課金でアイドルコスト0（NFR-06）。AWS学習も兼ねる。</td></tr>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-weight:600">DB</td><td style="padding:8px 10px;border:1px solid #d9dee4">DynamoDB（シングルテーブル）</td><td style="padding:8px 10px;border:1px solid #d9dee4">無料枠・サーバーレス整合。AWSネイティブの学習効果。</td></tr>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-weight:600">認証</td><td style="padding:8px 10px;border:1px solid #d9dee4">Amazon Cognito</td><td style="padding:8px 10px;border:1px solid #d9dee4">管理機能保護（NFR-04）と将来のマルチユーザー化を非破壊に用意。</td></tr>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-weight:600">IaC</td><td style="padding:8px 10px;border:1px solid #d9dee4">AWS CDK (TypeScript)</td><td style="padding:8px 10px;border:1px solid #d9dee4">フロントと同一言語でインフラ再現性を担保。</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ============ 3 ============ -->
+  <h2 style="font-size:20px;font-weight:900;color:#14212e;margin:34px 0 4px;padding-bottom:8px;border-bottom:2px solid #14212e">3. フロントエンド設計</h2>
+  <h3 style="font-size:15.5px;font-weight:700;color:#2a6db5;margin:22px 0 6px">3.1 ディレクトリ構成</h3>
+  <pre style="background:#0f1722;color:#e6edf3;font-family:'JetBrains Mono',monospace;font-size:11.5px;line-height:1.7;padding:16px;border-radius:6px;overflow-x:auto;margin:0 0 8px;white-space:pre">src/
+├─ app/                      # Next.js App Router（ルーティング＝画面）
+│  ├─ page.tsx               # SCR-01 ダッシュボード
+│  ├─ practice/              # SCR-02/03 演習設定・出題
+│  ├─ result/[sessionId]/    # SCR-04 結果・解説（図表示）★
+│  ├─ bookmarks/             # SCR-05
+│  ├─ progress/              # SCR-06 分析
+│  └─ admin/                 # SCR-07 管理（要認証）
+├─ features/                 # 機能単位（FRに対応）
+│  ├─ quiz/                  # 出題・採点ロジック
+│  ├─ diagram/               # ★ 図レンダラ＋連動ハイライト
+│  │  ├─ DiagramView.tsx     # React Flow ラッパ
+│  │  ├─ nodes/              # AWSサービス別カスタムノード
+│  │  └─ useHighlightLink.ts # refId ↔ nodeId の相互強調
+│  ├─ explanation/           # 解説（refタグのパースと連動）
+│  └─ progress/              # 正解率・スコア集計
+├─ lib/
+│  ├─ api/                   # データアクセス抽象（local | aws を差替）
+│  ├─ scoring.ts             # 採点・スケール換算
+│  └─ schema/                # 型定義 + zod バリデーション
+├─ components/               # 汎用UI
+└─ data/                     # questions.sample.json（Phase1/2）</pre>
+
+  <h3 style="font-size:15.5px;font-weight:700;color:#2a6db5;margin:22px 0 6px">3.2 データアクセス抽象化</h3>
+  <p style="margin:0 0 8px">画面はリポジトリ interface のみに依存させ、実装を <span style="font-family:'JetBrains Mono',monospace;font-size:12px">LocalRepository</span>（JSON/IndexedDB）→<span style="font-family:'JetBrains Mono',monospace;font-size:12px">AwsRepository</span>（API）へ差し替える。これによりMVPを素早く出し、後からAWS化してもUIを書き換えない。</p>
+  <pre style="background:#0f1722;color:#e6edf3;font-family:'JetBrains Mono',monospace;font-size:11.5px;line-height:1.7;padding:16px;border-radius:6px;overflow-x:auto;margin:0 0 8px;white-space:pre">interface QuizRepository {
+  listQuestions(filter: QuestionFilter): Promise&lt;Question[]&gt;;
+  getQuestion(id: string): Promise&lt;Question&gt;;
+  saveAttempt(a: Attempt): Promise&lt;void&gt;;
+  getProgress(): Promise&lt;ProgressSummary&gt;;
+  listBookmarks(): Promise&lt;Bookmark[]&gt;;
+}</pre>
+
+  <!-- ============ 4 ============ -->
+  <h2 style="font-size:20px;font-weight:900;color:#14212e;margin:34px 0 4px;padding-bottom:8px;border-bottom:2px solid #14212e">4. アーキテクチャ図レンダリング設計 <span style="color:#e8830c">★コア</span></h2>
+  <p style="margin:14px 0 12px">要件定義書 第5章（FR-06/FR-07）の実装方式を定義する。本アプリの差別化価値を担う中心モジュール。</p>
+
+  <h3 style="font-size:15.5px;font-weight:700;color:#2a6db5;margin:22px 0 6px">4.1 方式：DiagramSpec → React Flow</h3>
+  <p style="margin:0 0 12px">DB/JSONの <span style="font-family:'JetBrains Mono',monospace;font-size:12px">DiagramSpec</span>（宣言的なノード・エッジ・コンテナ）を、変換関数でReact Flowの <span style="font-family:'JetBrains Mono',monospace;font-size:12px">nodes/edges</span> にマッピングして描画する。各ノードは <span style="font-family:'JetBrains Mono',monospace;font-size:12px">id</span> を保持し、解説側の <span style="font-family:'JetBrains Mono',monospace;font-size:12px">refId</span> と一致させる。</p>
+
+  <h3 style="font-size:15.5px;font-weight:700;color:#2a6db5;margin:22px 0 6px">4.2 DiagramSpec スキーマ</h3>
+  <pre style="background:#0f1722;color:#e6edf3;font-family:'JetBrains Mono',monospace;font-size:11.5px;line-height:1.7;padding:16px;border-radius:6px;overflow-x:auto;margin:0 0 8px;white-space:pre">type DiagramSpec = {
+  renderer: "spec" | "image";      // spec=動的描画 / image=静的URL(代替)
+  imageUrl?: string;               // renderer=image のとき
+  containers?: Container[];        // VPC / AZ / Subnet などの入れ子枠
+  nodes: DiagramNode[];
+  edges: DiagramEdge[];
+};
+
+type Container = {
+  id: string;
+  type: "VPC" | "AZ" | "PublicSubnet" | "PrivateSubnet" | "Region";
+  label: string;
+  parent?: string;                 // 入れ子（AZ ⊂ VPC など）
+};
+
+type DiagramNode = {
+  id: string;                      // ★ 解説の refId と一致させる
+  service: AwsService;             // "EC2" | "S3" | "NATGateway" ...
+  label: string;
+  parent?: string;                 // 所属コンテナ
+  state?: "normal" | "faulty";     // 誤答説明で欠陥箇所を赤表示
+};
+
+type DiagramEdge = {
+  from: string; to: string;
+  label?: string;                  // "HTTPS 443" など
+  directed?: boolean;
+};</pre>
+
+  <h3 style="font-size:15.5px;font-weight:700;color:#2a6db5;margin:22px 0 6px">4.3 解説連動ハイライトの仕組み（FR-07）</h3>
+  <div style="background:#eef5fc;border:1px solid #cadcef;border-left:4px solid #2a6db5;border-radius:4px;padding:14px 18px;margin:0 0 12px">
+    <ol style="margin:0;padding-left:20px">
+      <li style="margin-bottom:6px">解説文はミニマークアップ <span style="font-family:'JetBrains Mono',monospace;font-size:12px">&lt;ref id="nat"&gt;NATゲートウェイ&lt;/ref&gt;</span> を含む。パーサがこれを <span style="font-family:'JetBrains Mono',monospace;font-size:12px">&lt;RefSpan nodeId&gt;</span> に変換。</li>
+      <li style="margin-bottom:6px">共有ストア <span style="font-family:'JetBrains Mono',monospace;font-size:12px">useHighlight()</span> が <span style="font-family:'JetBrains Mono',monospace;font-size:12px">activeId</span> を保持。</li>
+      <li style="margin-bottom:6px"><strong>テキスト→図:</strong> RefSpan の hover/tap で <span style="font-family:'JetBrains Mono',monospace;font-size:12px">setActive(id)</span> → 対応ノードが発光。</li>
+      <li style="margin-bottom:0"><strong>図→テキスト:</strong> ノードの hover/tap で同ストア更新 → 対応RefSpanを強調・スクロール。</li>
+    </ol>
+  </div>
+  <pre style="background:#0f1722;color:#e6edf3;font-family:'JetBrains Mono',monospace;font-size:11.5px;line-height:1.7;padding:16px;border-radius:6px;overflow-x:auto;margin:0 0 8px;white-space:pre">// features/diagram/useHighlightLink.ts
+const useHighlight = create&lt;{ activeId?: string; setActive(id?: string): void }&gt;(
+  (set) =&gt; ({ activeId: undefined, setActive: (id) =&gt; set({ activeId: id }) })
+);
+// ノード側: className に activeId===node.id で "ring/glow" を付与
+// RefSpan側: 同条件で背景ハイライト＋scrollIntoView相当のフォーカス</pre>
+
+  <h3 style="font-size:15.5px;font-weight:700;color:#2a6db5;margin:22px 0 6px">4.4 補完方式とフォールバック</h3>
+  <ul style="margin:0 0 6px;padding-left:22px">
+    <li style="margin-bottom:5px"><strong>Mermaid:</strong> 連動が不要な補足図はMermaidテキストでも描画可（<span style="font-family:'JetBrains Mono',monospace;font-size:12px">renderer</span>拡張）。</li>
+    <li style="margin-bottom:5px"><strong>静的画像:</strong> 図が未整備の問題は <span style="font-family:'JetBrains Mono',monospace;font-size:12px">renderer:"image"</span> で暫定表示し、後日specへ移行。</li>
+    <li style="margin-bottom:5px"><strong>AWSアイコン:</strong> 公式「AWS Architecture Icons」相当のサービス別アイコンをカスタムノードで表示（サービス名→アイコンのマップを一元管理）。</li>
+  </ul>
+
+  <h3 style="font-size:15.5px;font-weight:700;color:#2a6db5;margin:22px 0 6px">4.5 図の表示タイミング（FR-17）</h3>
+  <p style="margin:0 0 8px">同一の <span style="font-family:'JetBrains Mono',monospace;font-size:12px">DiagramView</span> を、設定 <span style="font-family:'JetBrains Mono',monospace;font-size:12px">settings.diagramTiming</span> に応じて出題画面（SCR-03）と結果画面（SCR-04）のどちらにマウントするかを切り替える。図コンポーネントは表示位置に依存しないため、追加実装は「どこに置くか」の分岐のみ。</p>
+  <ul style="margin:0 0 8px;padding-left:22px">
+    <li style="margin-bottom:5px"><span style="font-family:'JetBrains Mono',monospace;font-size:12px">"explanation"</span>（既定）: 結果画面でのみ描画。連動ハイライトも解説と同時に有効化。</li>
+    <li style="margin-bottom:5px"><span style="font-family:'JetBrains Mono',monospace;font-size:12px">"question"</span>: 出題画面に <span style="font-family:'JetBrains Mono',monospace;font-size:12px">hintMode</span> で描画。<span style="font-family:'JetBrains Mono',monospace;font-size:12px">choice.correct</span> / <span style="font-family:'JetBrains Mono',monospace;font-size:12px">explanation</span> / <span style="font-family:'JetBrains Mono',monospace;font-size:12px">node.state="faulty"</span> は回答確定まで非表示にマスクする。</li>
+    <li style="margin-bottom:5px">模試（FR-04）は <span style="font-family:'JetBrains Mono',monospace;font-size:12px">examMode</span> のとき設定を無視し常に <span style="font-family:'JetBrains Mono',monospace;font-size:12px">"explanation"</span> 相当に固定。</li>
+  </ul>
+
+  <!-- ============ 5 ============ -->
+  <h2 style="font-size:20px;font-weight:900;color:#14212e;margin:34px 0 4px;padding-bottom:8px;border-bottom:2px solid #14212e">5. API設計</h2>
+  <p style="margin:14px 0 10px">REST / JSON。Phase 3以降で有効化。認証が要る操作はCognito JWTを要求。</p>
+  <table style="width:100%;border-collapse:collapse;font-size:12px;margin:0 0 8px">
+    <thead>
+      <tr>
+        <th style="text-align:left;background:#14212e;color:#fff;font-weight:700;padding:8px 10px;width:10%">Method</th>
+        <th style="text-align:left;background:#14212e;color:#fff;font-weight:700;padding:8px 10px;width:30%">Path</th>
+        <th style="text-align:left;background:#14212e;color:#fff;font-weight:700;padding:8px 10px">用途 / 対応FR</th>
+        <th style="text-align:center;background:#14212e;color:#fff;font-weight:700;padding:8px 10px;width:10%">認証</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td style="padding:7px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-weight:600;color:#3f7a54">GET</td><td style="padding:7px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace">/questions?domain=&amp;limit=</td><td style="padding:7px 10px;border:1px solid #d9dee4">出題取得（FR-01/02/04）</td><td style="padding:7px 10px;border:1px solid #d9dee4;text-align:center">—</td></tr>
+      <tr><td style="padding:7px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-weight:600;color:#3f7a54">GET</td><td style="padding:7px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace">/questions/{id}</td><td style="padding:7px 10px;border:1px solid #d9dee4">解説・図取得（FR-06/07/08）</td><td style="padding:7px 10px;border:1px solid #d9dee4;text-align:center">—</td></tr>
+      <tr><td style="padding:7px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-weight:600;color:#c26a12">POST</td><td style="padding:7px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace">/attempts</td><td style="padding:7px 10px;border:1px solid #d9dee4">解答記録の保存（進捗の元）</td><td style="padding:7px 10px;border:1px solid #d9dee4;text-align:center">JWT</td></tr>
+      <tr><td style="padding:7px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-weight:600;color:#3f7a54">GET</td><td style="padding:7px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace">/progress</td><td style="padding:7px 10px;border:1px solid #d9dee4">分野別正解率集計（FR-11/12）</td><td style="padding:7px 10px;border:1px solid #d9dee4;text-align:center">JWT</td></tr>
+      <tr><td style="padding:7px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-weight:600;color:#c26a12">POST</td><td style="padding:7px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace">/exam-sessions</td><td style="padding:7px 10px;border:1px solid #d9dee4">模試の開始/保存（FR-04/13）</td><td style="padding:7px 10px;border:1px solid #d9dee4;text-align:center">JWT</td></tr>
+      <tr><td style="padding:7px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-weight:600;color:#c26a12">POST</td><td style="padding:7px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace">/bookmarks</td><td style="padding:7px 10px;border:1px solid #d9dee4">要復習の登録/解除（FR-10）</td><td style="padding:7px 10px;border:1px solid #d9dee4;text-align:center">JWT</td></tr>
+      <tr><td style="padding:7px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-weight:600;color:#c26a12">POST</td><td style="padding:7px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace">/admin/import</td><td style="padding:7px 10px;border:1px solid #d9dee4">JSON一括投入（FR-14）</td><td style="padding:7px 10px;border:1px solid #d9dee4;text-align:center">JWT/admin</td></tr>
+      <tr><td style="padding:7px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-weight:600;color:#2a6db5">PUT</td><td style="padding:7px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace">/admin/questions/{id}</td><td style="padding:7px 10px;border:1px solid #d9dee4">問題の編集（FR-15）</td><td style="padding:7px 10px;border:1px solid #d9dee4;text-align:center">JWT/admin</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ============ 6 ============ -->
+  <h2 style="font-size:20px;font-weight:900;color:#14212e;margin:34px 0 4px;padding-bottom:8px;border-bottom:2px solid #14212e">6. データベース設計（DynamoDB）</h2>
+  <h3 style="font-size:15.5px;font-weight:700;color:#2a6db5;margin:22px 0 6px">6.1 シングルテーブル設計</h3>
+  <p style="margin:0 0 8px">1テーブル <span style="font-family:'JetBrains Mono',monospace;font-size:12px">SaaApp</span> にPK/SKで全エンティティを格納。GSI1で分野別・ユーザー別アクセスを賄う。</p>
+  <table style="width:100%;border-collapse:collapse;font-size:12px;margin:0 0 12px">
+    <thead>
+      <tr>
+        <th style="text-align:left;background:#14212e;color:#fff;font-weight:700;padding:8px 10px;width:20%">エンティティ</th>
+        <th style="text-align:left;background:#14212e;color:#fff;font-weight:700;padding:8px 10px;width:30%">PK</th>
+        <th style="text-align:left;background:#14212e;color:#fff;font-weight:700;padding:8px 10px">SK / GSI1</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td style="padding:7px 10px;border:1px solid #d9dee4;font-weight:600">Question</td><td style="padding:7px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace">QUESTION#{id}</td><td style="padding:7px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace">META / GSI1PK=DOMAIN#{domain}</td></tr>
+      <tr><td style="padding:7px 10px;border:1px solid #d9dee4;font-weight:600">Attempt</td><td style="padding:7px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace">USER#{uid}</td><td style="padding:7px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace">ATTEMPT#{ts}#{qid}</td></tr>
+      <tr><td style="padding:7px 10px;border:1px solid #d9dee4;font-weight:600">ExamSession</td><td style="padding:7px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace">USER#{uid}</td><td style="padding:7px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace">EXAM#{ts}</td></tr>
+      <tr><td style="padding:7px 10px;border:1px solid #d9dee4;font-weight:600">Bookmark</td><td style="padding:7px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace">USER#{uid}</td><td style="padding:7px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace">BOOKMARK#{qid}</td></tr>
+    </tbody>
+  </table>
+
+  <h3 style="font-size:15.5px;font-weight:700;color:#2a6db5;margin:22px 0 6px">6.2 主要アクセスパターン</h3>
+  <ul style="margin:0 0 6px;padding-left:22px">
+    <li style="margin-bottom:5px">分野別の問題取得 → GSI1（<span style="font-family:'JetBrains Mono',monospace;font-size:12px">GSI1PK=DOMAIN#SECURE_ARCH</span>）をQuery。</li>
+    <li style="margin-bottom:5px">ユーザーの解答履歴 → <span style="font-family:'JetBrains Mono',monospace;font-size:12px">PK=USER#uid, SK begins_with ATTEMPT#</span>。</li>
+    <li style="margin-bottom:5px">分野別正解率 → 履歴を集計（件数が増えたら日次で集計項目に事前集約）。</li>
+  </ul>
+
+  <!-- ============ 7 ============ -->
+  <h2 style="font-size:20px;font-weight:900;color:#14212e;margin:34px 0 4px;padding-bottom:8px;border-bottom:2px solid #14212e">7. データモデル（TypeScript型定義）</h2>
+  <p style="margin:14px 0 8px">正規のソース。zodスキーマも同定義から生成し、インポート時の検証（NFR-05）に用いる。</p>
+  <pre style="background:#0f1722;color:#e6edf3;font-family:'JetBrains Mono',monospace;font-size:11.5px;line-height:1.7;padding:16px;border-radius:6px;overflow-x:auto;margin:0 0 8px;white-space:pre">type Domain =
+  | "SECURE_ARCH"      // 安全なアーキテクチャの設計
+  | "RESILIENT"        // 高レジリエンスアーキテクチャの設計
+  | "HIGH_PERF"        // 高性能アーキテクチャの設計
+  | "COST_OPT";        // コスト最適化アーキテクチャの設計
+
+type Choice = {
+  id: string;
+  text: string;
+  correct: boolean;
+  why?: string;                    // 誤答/正答の理由（FR-08）
+};
+
+type Explanation = {
+  summary: string;                 // &lt;ref id="..."&gt; を含むミニマークアップ
+  refIds: string[];                // 図ノードと対応（FR-07）
+};
+
+type Question = {
+  id: string;
+  domain: Domain;
+  type: "single" | "multiple";
+  stem: string;
+  choices: Choice[];
+  explanation: Explanation;
+  diagram?: DiagramSpec;           // 図（コア）
+  docLinks?: { title: string; url: string }[];
+  tags?: string[];
+};
+
+type Attempt = {
+  questionId: string;
+  domain: Domain;
+  selected: string[];
+  correct: boolean;
+  elapsedSec: number;
+  answeredAt: string;              // ISO8601
+};
+
+type ExamSession = {
+  id: string;
+  questionIds: string[];           // 65問
+  startedAt: string;
+  durationSec: number;             // 130*60
+  attempts: Attempt[];
+  scorePct?: number;
+  passed?: boolean;                // 合格ライン判定
+};
+
+type UserSettings = {
+  diagramTiming: "explanation" | "question";  // FR-17: 図の表示タイミング（既定 explanation）
+  passLinePct: number;                         // 合格目安ライン（既定 72）
+};
+
+type ProgressSummary = {
+  totalAnswered: number;
+  overallPct: number;
+  byDomain: Record&lt;Domain, { answered: number; correctPct: number }&gt;;
+};</pre>
+
+  <!-- ============ 8 ============ -->
+  <h2 style="font-size:20px;font-weight:900;color:#14212e;margin:34px 0 4px;padding-bottom:8px;border-bottom:2px solid #14212e">8. 採点・進捗ロジック</h2>
+  <ul style="margin:14px 0 12px;padding-left:22px">
+    <li style="margin-bottom:6px"><strong>採点（FR-03）:</strong> 単一選択は一致で正解。複数選択は<strong>選択集合が正解集合と完全一致</strong>で正解（部分点なし＝本番準拠）。</li>
+    <li style="margin-bottom:6px"><strong>分野別正解率（FR-11）:</strong> <span style="font-family:'JetBrains Mono',monospace;font-size:12px">correctPct = 正解Attempt数 / 該当分野Attempt数</span>。レーダーチャートに反映。</li>
+    <li style="margin-bottom:6px"><strong>模試スコア（FR-04）:</strong> 得点率を算出し、合格目安ライン（設定値・既定72%相当）で合否判定。未回答は誤答。</li>
+    <li style="margin-bottom:6px"><strong>弱点抽出（SCR-06）:</strong> 分野別正解率の最低2分野を「重点復習」として提示。</li>
+  </ul>
+
+  <!-- ============ 9 ============ -->
+  <h2 style="font-size:20px;font-weight:900;color:#14212e;margin:34px 0 4px;padding-bottom:8px;border-bottom:2px solid #14212e">9. インフラ / デプロイ</h2>
+  <table style="width:100%;border-collapse:collapse;font-size:12.5px;margin:14px 0 8px">
+    <thead>
+      <tr>
+        <th style="text-align:left;background:#14212e;color:#fff;font-weight:700;padding:8px 10px;width:26%">項目</th>
+        <th style="text-align:left;background:#14212e;color:#fff;font-weight:700;padding:8px 10px">方針</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-weight:600">ホスティング</td><td style="padding:8px 10px;border:1px solid #d9dee4">Next.jsをS3＋CloudFront（またはAmplify Hosting）で配信。</td></tr>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-weight:600">API</td><td style="padding:8px 10px;border:1px solid #d9dee4">API Gateway → Lambda（Node.js/TypeScript）。</td></tr>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-weight:600">IaC</td><td style="padding:8px 10px;border:1px solid #d9dee4">AWS CDKで全リソースをコード化。<span style="font-family:'JetBrains Mono',monospace;font-size:12px">cdk deploy</span>で再現。</td></tr>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-weight:600">環境</td><td style="padding:8px 10px;border:1px solid #d9dee4">dev / prod の2環境。問題データはPhase2はリポジトリ内JSON、Phase3でDynamoDBへ投入。</td></tr>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-weight:600">CI/CD</td><td style="padding:8px 10px;border:1px solid #d9dee4">GitHub Actions：lint / 型チェック / zod検証 / ビルド / デプロイ。</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ============ 10 ============ -->
+  <h2 style="font-size:20px;font-weight:900;color:#14212e;margin:34px 0 4px;padding-bottom:8px;border-bottom:2px solid #14212e">10. 開発フェーズとトレーサビリティ</h2>
+  <table style="width:100%;border-collapse:collapse;font-size:12.5px;margin:14px 0 8px">
+    <thead>
+      <tr>
+        <th style="text-align:left;background:#14212e;color:#fff;font-weight:700;padding:8px 10px;width:16%">フェーズ</th>
+        <th style="text-align:left;background:#14212e;color:#fff;font-weight:700;padding:8px 10px">実装タスク</th>
+        <th style="text-align:left;background:#14212e;color:#fff;font-weight:700;padding:8px 10px;width:24%">対応要件</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-weight:700;color:#2a6db5">Phase 1</td><td style="padding:8px 10px;border:1px solid #d9dee4">型定義＋zodスキーマ確定、DiagramSpec設計、サンプル5〜10問作成</td><td style="padding:8px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-size:11.5px">§4,§7 / FR-06,14</td></tr>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-weight:700;color:#2a6db5">Phase 2</td><td style="padding:8px 10px;border:1px solid #d9dee4">演習UI、採点、結果・解説画面、<strong>React Flow図＋連動ハイライト</strong>、ブックマーク</td><td style="padding:8px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-size:11.5px">FR-01〜03,06〜10</td></tr>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-weight:700;color:#2a6db5">Phase 3</td><td style="padding:8px 10px;border:1px solid #d9dee4">模試モード、ダッシュボード/レーダー、AWSバックエンド化（API/DynamoDB/Cognito）</td><td style="padding:8px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-size:11.5px">FR-04,05,11〜13</td></tr>
+      <tr><td style="padding:8px 10px;border:1px solid #d9dee4;font-weight:700;color:#5b6672">Phase 4</td><td style="padding:8px 10px;border:1px solid #d9dee4">問題100問以上へ拡充、管理画面のCRUD/プレビュー強化、将来機能検討</td><td style="padding:8px 10px;border:1px solid #d9dee4;font-family:'JetBrains Mono',monospace;font-size:11.5px">FR-15,16</td></tr>
+    </tbody>
+  </table>
+
+  <div style="margin-top:28px;padding-top:14px;border-top:1px solid #d9dee4;font-size:11px;color:#9aa4b0;font-family:'JetBrains Mono',monospace;display:flex;justify-content:space-between">
+    <span>DOC-SPEC-001 — AWS SAA 学習アプリ 技術仕様書</span>
+    <span>v1.0 / 2026-07-04</span>
+  </div>
+
+</div>
+</x-import>
+</x-dc>
+</body>
+</html>
