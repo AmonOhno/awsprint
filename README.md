@@ -45,14 +45,29 @@
 3. [データスキーマ](docs/data/schema.md) ＋ [図解連動設計](docs/feature/diagram_highlight.md) — 実装の起点
 4. [data/questions.sample.json](data/questions.sample.json) — スキーマと照合して Phase 1 を確定
 
+## 開発・起動
+
+```bash
+npm install
+npm run dev          # 開発サーバー（http://localhost:5173）
+npm run build        # 本番ビルド → dist/
+npm run preview      # ビルド結果をローカル確認
+npm test             # ユニットテスト（採点・図変換・検証・refパース）
+npm run typecheck    # 型チェック
+npm run validate:data# public/data 配下の問題JSONを zod 検証（CIと同一）
+```
+
+main への push で GitHub Actions が typecheck / データ検証 / テスト / ビルドを実行し、GitHub Pages へ自動デプロイする（[.github/workflows/deploy.yml](.github/workflows/deploy.yml)）。
+問題データは [public/data/](public/data/) の JSON（`index.json` がマニフェスト）。
+
 ## 開発フェーズ
 
-| フェーズ | ゴール |
-|---------|--------|
-| Phase 1 | データ設計。スキーマ確定・図解付きサンプル5〜10問 ← **サンプル5問まで完了** |
-| Phase 2 | MVPコア。1問1答＋結果解説画面での図表示・連動ハイライト |
-| Phase 3 | 模擬試験（65問/130分）とダッシュボード（苦手分析） |
-| Phase 4 | データ拡充（100問以上）、管理画面強化、履歴バックアップ |
+| フェーズ | ゴール | 状態 |
+|---------|--------|------|
+| Phase 1 | データ設計。スキーマ確定・図解付きサンプル5〜10問 | ✅ 完了（型/zod/サンプル5問） |
+| Phase 2 | MVPコア。1問1答＋結果解説画面での図表示・連動ハイライト | ✅ 実装済み（演習・採点・図解連動・ブックマーク） |
+| Phase 3 | 模擬試験（65問/130分）とダッシュボード（苦手分析） | ✅ 実装済み（模試/タイマー/進捗レーダー・バー・推移） |
+| Phase 4 | データ拡充（100問以上）、管理画面強化、履歴バックアップ | 🔜 バックアップ・JSON検証UIは実装済み。問題拡充が主タスク |
 
 ## トレーサビリティ
 
