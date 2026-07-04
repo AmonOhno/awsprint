@@ -15,7 +15,7 @@ function ContainerNodeImpl({ data }: NodeProps) {
   const color = TYPE_COLOR[d.type] ?? "#64748b";
   return (
     <div
-      className="h-full w-full rounded-lg border-2 border-dashed"
+      className="relative h-full w-full rounded-lg border-2 border-dashed"
       style={{ borderColor: color, backgroundColor: `${color}0d` }}
     >
       <span
