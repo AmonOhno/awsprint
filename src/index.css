@@ -9,8 +9,3 @@
 body {
   @apply bg-slate-50 text-slate-800 antialiased;
 }
-
-/* React Flow のコンテナラベルを絶対配置できるように */
-.react-flow__node-container {
-  position: relative;
-}
