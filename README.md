@@ -1,5 +1,32 @@
 # awsprint — AWS SAA 学習アプリ
 
+## アーキテクチャ概要
+
+バックエンドを持たない完全静的SPA。問題データは GitHub Pages から取得し、学習履歴は端末内（IndexedDB / localStorage）に保存する。詳細（C4 Level 1〜3・データフロー）は [docs/architecture.md](docs/architecture.md) を参照。
+
+```mermaid
+C4Context
+  title System Context: awsprint
+
+  Person(learner, "学習者", "SAA受験者。ブラウザで問題演習・模試・復習を行う")
+  Person(author, "問題作成者", "問題JSON（DiagramSpec付き）を作成し、リポジトリへコミットする")
+
+  System(awsprint, "awsprint", "AWS SAA学習SPA。解説文と構成図の連動ハイライト、採点、進捗分析を提供")
+
+  System_Ext(pages, "GitHub Pages", "静的ファイル（SPA・問題JSON）のホスティング")
+  System_Ext(github, "GitHub（リポジトリ / Actions）", "ソースと問題データの管理、CIによる検証・ビルド・デプロイ")
+
+  Rel(learner, awsprint, "演習・結果確認・バックアップ", "ブラウザ")
+  Rel(author, github, "問題JSON・コードをpush", "git")
+  Rel(author, awsprint, "管理画面で問題JSONを検証・プレビュー", "ブラウザ")
+  Rel(github, pages, "ビルド成果物 dist/ をデプロイ", "actions/deploy-pages")
+  Rel(awsprint, pages, "配信を受ける", "HTTPS")
+
+  UpdateLayoutConfig($c4ShapeInRow="2", $c4BoundaryInRow="1")
+```
+
+---
+
 アーキテクチャ図解の連動ハイライトで「文章要件 → 構成図」への変換力を鍛える、SAA合格のための個人学習アプリ。
 
 ## コアバリュー
